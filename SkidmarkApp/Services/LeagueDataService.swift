@@ -18,6 +18,10 @@ protocol LeagueDataService {
 
     /// Fetches playoff bracket data for a specific week
     func fetchPlayoffBracket(leagueId: String, season: Int, week: Int) async throws -> [PlayoffBracketEntry]
+
+    /// Fetches matchup results for all weeks up through the given week.
+    /// Returns a dictionary keyed by week number.
+    func fetchAllMatchups(leagueId: String, season: Int, throughWeek: Int) async throws -> [Int: [WeeklyMatchup]]
 }
 
 // MARK: - Default Implementations
@@ -33,6 +37,10 @@ extension LeagueDataService {
 
     func fetchPlayoffBracket(leagueId: String, season: Int, week: Int) async throws -> [PlayoffBracketEntry] {
         throw LeagueDataError.notSupported("fetchPlayoffBracket")
+    }
+
+    func fetchAllMatchups(leagueId: String, season: Int, throughWeek: Int) async throws -> [Int: [WeeklyMatchup]] {
+        throw LeagueDataError.notSupported("fetchAllMatchups")
     }
 }
 

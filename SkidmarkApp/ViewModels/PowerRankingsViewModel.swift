@@ -47,6 +47,11 @@ class PowerRankingsViewModel {
     private var currentLeague: LeagueConnection?
     private var lastRoastHash: Int?
     
+    /// Cached matchup results for all weeks, fetched once and reused for week navigation
+    private var allMatchupsCache: [Int: [WeeklyMatchup]]?
+    /// The "current week" team data (before any historical overrides), used as the base for navigation
+    private var baseTeams: [Team] = []
+    
     // MARK: - Initialization
     
     /// Convenience initializer with default service implementations
@@ -128,6 +133,8 @@ class PowerRankingsViewModel {
             }
             // If data unchanged, keep existing teams array intact (preserves roasts and hash)
             
+            baseTeams = teams
+            
             lastUpdated = Date()
             
             // Fetch league settings to determine current week and season phase
@@ -169,6 +176,18 @@ class PowerRankingsViewModel {
             
             // Load available roast weeks from cache
             refreshAvailableWeeks()
+            
+            // Fetch all matchups for time-machine navigation
+            do {
+                allMatchupsCache = try await service.fetchAllMatchups(
+                    leagueId: league.leagueId,
+                    season: season,
+                    throughWeek: currentWeek
+                )
+            } catch {
+                // Non-fatal: week navigation will work without historical records
+                allMatchupsCache = nil
+            }
             
             // Cache the data with current hash
             try? storageService.saveCachedLeagueData(teams, forLeagueId: league.leagueId, roastHash: lastRoastHash)
@@ -223,9 +242,12 @@ class PowerRankingsViewModel {
         errorMessage = nil
         
         do {
-            // Fetch matchup data for the selected week
+            // Use cached matchup data if available, otherwise fetch for the selected week
             var matchups: [WeeklyMatchup] = []
-            if let league = currentLeague, selectedWeek > 0 {
+            if let cachedMatchups = allMatchupsCache?[selectedWeek] {
+                matchups = cachedMatchups
+                weeklyMatchups = matchups
+            } else if let league = currentLeague, selectedWeek > 0 {
                 let service = league.platform == .espn ? espnService : sleeperService
                 let season = SeasonHelper.currentFantasyFootballSeason()
                 do {
@@ -236,7 +258,6 @@ class PowerRankingsViewModel {
                     )
                     weeklyMatchups = matchups
                 } catch {
-                    // Matchup fetch failed -- proceed without matchup data (Req 4.6 fallback)
                     matchups = []
                     weeklyMatchups = []
                 }
@@ -314,27 +335,60 @@ class PowerRankingsViewModel {
     
     // MARK: - Week Navigation
     
-    /// Navigates to the specified week, loading cached roasts or clearing for fresh generation
-    /// - Parameter week: The target week number (clamped to 1...currentWeek)
+    /// Navigates to the specified week, computing historical standings and loading matchup data.
+    /// When all-matchups data is available, reconstructs cumulative records through the target week
+    /// so the UI shows standings as they were at that point in the season.
     func navigateToWeek(_ week: Int) {
         let clampedWeek = max(1, min(week, currentWeek))
         selectedWeek = clampedWeek
-        weeklyMatchups = []
         
-        // Try to load cached roasts for this week
         guard let leagueId = currentLeague?.leagueId else { return }
         
+        // If navigating to the current week, restore base teams
+        if clampedWeek == currentWeek {
+            teams = baseTeams
+            weeklyMatchups = allMatchupsCache?[clampedWeek] ?? []
+            
+            // Apply cached roasts if available
+            if let cached = try? storageService.loadWeeklyRoasts(forLeagueId: leagueId, week: clampedWeek) {
+                teams = teams.map { team in
+                    var t = team
+                    t.roast = cached.roasts[team.id]
+                    return t
+                }
+            }
+            return
+        }
+        
+        // For past weeks, compute historical standings from matchup data
+        if let allMatchups = allMatchupsCache {
+            let historicalRecords = StandingsCalculator.computeStandings(
+                allMatchups: allMatchups,
+                throughWeek: clampedWeek
+            )
+            teams = StandingsCalculator.applyHistoricalRecords(
+                to: baseTeams,
+                records: historicalRecords
+            )
+            weeklyMatchups = allMatchups[clampedWeek] ?? []
+        } else {
+            // No all-matchups data available; keep current teams, clear matchups
+            teams = baseTeams
+            weeklyMatchups = []
+        }
+        
+        // Apply cached roasts if available for this week
         do {
             if let cached = try storageService.loadWeeklyRoasts(forLeagueId: leagueId, week: clampedWeek) {
                 if let snapshot = cached.teamSnapshot {
-                    // Restore full team snapshot with roasts applied
+                    // Prefer the full snapshot if available (includes roasts baked in at generation time)
                     teams = snapshot.map { team in
                         var t = team
                         t.roast = cached.roasts[team.id]
                         return t
                     }
                 } else {
-                    // Legacy cache without snapshot -- apply roasts to current teams
+                    // Apply roasts to the computed historical teams
                     teams = teams.map { team in
                         var t = team
                         t.roast = cached.roasts[team.id]
@@ -342,7 +396,7 @@ class PowerRankingsViewModel {
                     }
                 }
             } else {
-                // No cached roasts for this week -- clear roasts so UI shows "Generate Roasts"
+                // No cached roasts -- clear roasts so UI shows "Generate Roasts"
                 teams = teams.map { team in
                     var t = team
                     t.roast = nil
@@ -350,7 +404,6 @@ class PowerRankingsViewModel {
                 }
             }
         } catch {
-            // Cache load failure is non-fatal; clear roasts and let user regenerate
             teams = teams.map { team in
                 var t = team
                 t.roast = nil

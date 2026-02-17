@@ -190,6 +190,34 @@ class SleeperService: LeagueDataService {
         }
     }
     
+    // MARK: - All Matchups (Time Machine)
+    
+    func fetchAllMatchups(leagueId: String, season: Int, throughWeek: Int) async throws -> [Int: [WeeklyMatchup]] {
+        return try await retryService.execute {
+            try await self.performAllMatchupsFetch(leagueId: leagueId, throughWeek: throughWeek)
+        }
+    }
+    
+    private func performAllMatchupsFetch(leagueId: String, throughWeek: Int) async throws -> [Int: [WeeklyMatchup]] {
+        let playerMap = try await getPlayerMap()
+        
+        return try await withThrowingTaskGroup(of: (Int, [WeeklyMatchup]).self) { group in
+            for week in 1...throughWeek {
+                group.addTask {
+                    let rosters = try await self.fetchMatchups(leagueId: leagueId, week: week)
+                    let matchups = self.buildMatchups(from: rosters, playerMap: playerMap, week: week)
+                    return (week, matchups)
+                }
+            }
+            
+            var result: [Int: [WeeklyMatchup]] = [:]
+            for try await (week, matchups) in group {
+                result[week] = matchups
+            }
+            return result
+        }
+    }
+    
     // MARK: - Playoff Bracket
     
     func fetchPlayoffBracket(leagueId: String, season: Int, week: Int) async throws -> [PlayoffBracketEntry] {

@@ -732,4 +732,110 @@ class ESPNService: LeagueDataService {
         
         return 0.0
     }
+    
+    // MARK: - All Matchups (Time Machine)
+    
+    func fetchAllMatchups(leagueId: String, season: Int, throughWeek: Int) async throws -> [Int: [WeeklyMatchup]] {
+        return try await retryService.execute {
+            try await self.performAllMatchupsFetch(leagueId: leagueId, season: season, throughWeek: throughWeek)
+        }
+    }
+    
+    private func performAllMatchupsFetch(leagueId: String, season: Int, throughWeek: Int) async throws -> [Int: [WeeklyMatchup]] {
+        let credentialsResult = keychainService.retrieveESPNCredentials(forLeagueId: leagueId)
+        guard case .success(let credentials) = credentialsResult else {
+            throw LeagueDataError.authenticationRequired
+        }
+        
+        let urlString = "\(baseURL)/\(season)/segments/0/leagues/\(leagueId)"
+        guard var urlComponents = URLComponents(string: urlString) else {
+            throw LeagueDataError.invalidResponse
+        }
+        
+        // Fetch mMatchup without scoringPeriodId to get ALL weeks
+        urlComponents.queryItems = [
+            URLQueryItem(name: "view", value: "mMatchup")
+        ]
+        
+        guard let url = urlComponents.url else {
+            throw LeagueDataError.invalidResponse
+        }
+        
+        var request = URLRequest(url: url, timeoutInterval: 30)
+        request.setValue("espn_s2=\(credentials.espnS2); SWID=\(credentials.swid)", forHTTPHeaderField: "Cookie")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw LeagueDataError.invalidResponse
+        }
+        
+        switch httpResponse.statusCode {
+        case 200...299:
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw LeagueDataError.parsingError("Failed to parse all-matchups JSON response")
+            }
+            return try parseAllMatchups(json: json, throughWeek: throughWeek)
+            
+        case 401, 403:
+            _ = keychainService.deleteESPNCredentials(forLeagueId: leagueId)
+            onCredentialsExpired?(leagueId)
+            throw LeagueDataError.invalidCredentials
+            
+        case 404:
+            throw LeagueDataError.leagueNotFound
+            
+        default:
+            throw LeagueDataError.serverError(statusCode: httpResponse.statusCode)
+        }
+    }
+    
+    /// Parses ALL matchups from the ESPN schedule, grouped by week, through the given week.
+    private func parseAllMatchups(json: [String: Any], throughWeek: Int) throws -> [Int: [WeeklyMatchup]] {
+        guard let schedule = json["schedule"] as? [[String: Any]] else {
+            throw LeagueDataError.parsingError("Missing schedule array in matchup response")
+        }
+        
+        var result: [Int: [WeeklyMatchup]] = [:]
+        
+        for entry in schedule {
+            guard let matchupPeriodId = entry["matchupPeriodId"] as? Int,
+                  matchupPeriodId >= 1 && matchupPeriodId <= throughWeek else {
+                continue
+            }
+            
+            guard let home = entry["home"] as? [String: Any],
+                  let homeTeamId = home["teamId"] as? Int else {
+                continue
+            }
+            
+            let homeScore = home["totalPoints"] as? Double ?? 0.0
+            let homePlayers = parseRosterPlayers(from: home)
+            
+            var awayTeamId = 0
+            var awayScore = 0.0
+            var awayPlayers: [WeeklyPlayerStats] = []
+            
+            if let away = entry["away"] as? [String: Any] {
+                awayTeamId = away["teamId"] as? Int ?? 0
+                awayScore = away["totalPoints"] as? Double ?? 0.0
+                awayPlayers = parseRosterPlayers(from: away)
+            }
+            
+            guard awayTeamId != 0 else { continue }
+            
+            let matchup = WeeklyMatchup(
+                weekNumber: matchupPeriodId,
+                homeTeamId: String(homeTeamId),
+                awayTeamId: String(awayTeamId),
+                homeScore: homeScore,
+                awayScore: awayScore,
+                homePlayers: homePlayers,
+                awayPlayers: awayPlayers
+            )
+            result[matchupPeriodId, default: []].append(matchup)
+        }
+        
+        return result
+    }
 }

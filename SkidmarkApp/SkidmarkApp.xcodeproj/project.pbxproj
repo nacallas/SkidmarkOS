@@ -35,6 +35,7 @@
 		63F783B4679EE9952857ED19 /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D5D2FA9856A4434DB64997 /* Team.swift */; };
 		646F7CB59A0858BB303AC33E /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D914FC653DDDBA675E55CE0C /* StorageService.swift */; };
 		6E3326677BE8ABDAD2E6F487 /* ManualCredentialEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A163119E7B37E6EACAD5DB9 /* ManualCredentialEntryView.swift */; };
+		78418306AEB99FBF0CCC8361 /* StandingsCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1EAD9F072CF15A055A4C52 /* StandingsCalculator.swift */; };
 		7976A859781FE1354C182118 /* SeasonPhasePropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BDA420E892E7A7EB1C2AFD /* SeasonPhasePropertyTests.swift */; };
 		7E0211F2D8E36D1E128001D7 /* SwiftCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 637A67899E28422D08A59A46 /* SwiftCheck */; };
 		7E9C0F4C736A0F9029F99794 /* LeagueContextViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D5A94DEE69C431A9577CE4 /* LeagueContextViewModel.swift */; };
@@ -125,6 +126,7 @@
 		AA34FD558CA029CF5BF87E5F /* LeagueDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeagueDataService.swift; sourceTree = "<group>"; };
 		AC8A1C0000AC63BBCD11EDC9 /* RetryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryPolicy.swift; sourceTree = "<group>"; };
 		ACF98304BC8F0B7B13A39BEF /* PlayoffBracket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayoffBracket.swift; sourceTree = "<group>"; };
+		AF1EAD9F072CF15A055A4C52 /* StandingsCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingsCalculator.swift; sourceTree = "<group>"; };
 		B4BAFB2602718924B1AE84DB /* RoastPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoastPropertyTests.swift; sourceTree = "<group>"; };
 		B7F39D977E0E7CCAFCB1936D /* SleeperServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleeperServiceTests.swift; sourceTree = "<group>"; };
 		B9611C618C3B87C3B1EE14A4 /* PowerRankingsPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerRankingsPropertyTests.swift; sourceTree = "<group>"; };
@@ -234,6 +236,7 @@
 			children = (
 				50A10E5F4668322C1A88192E /* PowerRankingsCalculator.swift */,
 				0B453994BB178AD8B62A80C1 /* SeasonHelper.swift */,
+				AF1EAD9F072CF15A055A4C52 /* StandingsCalculator.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -410,6 +413,7 @@
 				1CDA6D2CC95C364C672D152B /* SettingsView.swift in Sources */,
 				17B427A5644D8006D884369B /* SkidmarkApp.swift in Sources */,
 				842BBA5F9E7FD597E60EFE87 /* SleeperService.swift in Sources */,
+				78418306AEB99FBF0CCC8361 /* StandingsCalculator.swift in Sources */,
 				646F7CB59A0858BB303AC33E /* StorageService.swift in Sources */,
 				63F783B4679EE9952857ED19 /* Team.swift in Sources */,
 				84FA3B2EEBFB9BAAFF63E020 /* TeamCardView.swift in Sources */,
