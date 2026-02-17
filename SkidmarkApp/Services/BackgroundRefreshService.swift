@@ -85,7 +85,8 @@ final class BackgroundRefreshService {
                 let service = connection.platform == .espn ? espnService : sleeperService
                 
                 // Determine the correct season year
-                let season = SeasonHelper.currentFantasyFootballSeason()
+                let season =
+                SeasonHelper.currentFantasyFootballSeason()
                 
                 // Fetch fresh data
                 let teams = try await service.fetchLeagueData(

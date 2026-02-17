@@ -51,6 +51,8 @@ class PowerRankingsViewModel {
     private var allMatchupsCache: [Int: [WeeklyMatchup]]?
     /// The "current week" team data (before any historical overrides), used as the base for navigation
     private var baseTeams: [Team] = []
+    /// Playoff start week from league settings, retained for season phase detection during week navigation
+    private var playoffStartWeek: Int = 15
     
     // MARK: - Initialization
     
@@ -145,6 +147,7 @@ class PowerRankingsViewModel {
                 )
                 currentWeek = max(1, settings.currentWeek)
                 selectedWeek = currentWeek
+                playoffStartWeek = settings.playoffStartWeek
                 
                 // Detect season phase from league settings
                 seasonPhase = SeasonPhaseDetector.detect(
@@ -292,7 +295,8 @@ class PowerRankingsViewModel {
                     weekNumber: selectedWeek,
                     generatedAt: Date(),
                     roasts: roasts,
-                    teamSnapshot: teams
+                    teamSnapshot: teams,
+                    roastHash: currentHash
                 )
                 try? storageService.saveWeeklyRoasts(weeklyCache)
                 refreshAvailableWeeks()
@@ -324,8 +328,6 @@ class PowerRankingsViewModel {
         parts.append("s:\(context.sackoPunishment)")
         parts.append("c:\(context.cultureNotes)")
         
-        parts.append("w:\(selectedWeek)")
-        
         // Use a simple deterministic hash (djb2)
         let combined = parts.joined(separator: "||")
         var hash = 5381
@@ -343,8 +345,19 @@ class PowerRankingsViewModel {
     func navigateToWeek(_ week: Int) async {
         let clampedWeek = max(1, min(week, currentWeek))
         selectedWeek = clampedWeek
-        lastRoastHash = nil
         isLoading = true
+        
+        // Update season phase for the target week.
+        // For the current week, use real-world detection (may be offseason).
+        // For past weeks, determine purely from week vs playoff start (time-travel ignores real date).
+        if clampedWeek == currentWeek {
+            seasonPhase = SeasonPhaseDetector.detect(
+                currentWeek: currentWeek,
+                playoffStartWeek: playoffStartWeek
+            )
+        } else {
+            seasonPhase = clampedWeek >= playoffStartWeek ? .playoffs : .regularSeason
+        }
         
         guard let leagueId = currentLeague?.leagueId else {
             isLoading = false
@@ -363,6 +376,7 @@ class PowerRankingsViewModel {
                     t.roast = cached.roasts[team.id]
                     return t
                 }
+                lastRoastHash = cached.roastHash
             }
             isLoading = false
             return
@@ -403,6 +417,7 @@ class PowerRankingsViewModel {
                         return t
                     }
                 }
+                lastRoastHash = cached.roastHash
             } else {
                 // No cached roasts -- clear roasts so UI shows "Generate Roasts"
                 teams = teams.map { team in
@@ -410,6 +425,7 @@ class PowerRankingsViewModel {
                     t.roast = nil
                     return t
                 }
+                lastRoastHash = nil
             }
         } catch {
             teams = teams.map { team in
@@ -417,6 +433,7 @@ class PowerRankingsViewModel {
                 t.roast = nil
                 return t
             }
+            lastRoastHash = nil
         }
         
         isLoading = false

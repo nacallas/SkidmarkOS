@@ -188,7 +188,7 @@ struct PowerRankingsView: View {
                     Task {
                         await vm.navigateToWeek(vm.selectedWeek - 1)
                         guard !Task.isCancelled else { return }
-                        if !hasAnyRoasts { await generateRoasts() }
+                        await generateRoasts()
                     }
                 } label: {
                     Image(systemName: "chevron.left.circle.fill")
@@ -224,7 +224,7 @@ struct PowerRankingsView: View {
                     Task {
                         await vm.navigateToWeek(vm.selectedWeek + 1)
                         guard !Task.isCancelled else { return }
-                        if !hasAnyRoasts { await generateRoasts() }
+                        await generateRoasts()
                     }
                 } label: {
                     Image(systemName: "chevron.right.circle.fill")
