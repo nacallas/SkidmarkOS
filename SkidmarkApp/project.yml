@@ -2,7 +2,7 @@ name: SkidmarkApp
 options:
   bundleIdPrefix: com.skidmark
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "18.0"
   xcodeVersion: "16.2"
   generateEmptyDirectories: false
 
