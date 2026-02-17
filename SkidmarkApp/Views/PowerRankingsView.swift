@@ -185,8 +185,10 @@ struct PowerRankingsView: View {
             
             HStack(spacing: 16) {
                 Button {
-                    withAnimation(.spring(duration: 0.3)) {
-                        vm.navigateToWeek(vm.selectedWeek - 1)
+                    Task {
+                        await vm.navigateToWeek(vm.selectedWeek - 1)
+                        guard !Task.isCancelled else { return }
+                        if !hasAnyRoasts { await generateRoasts() }
                     }
                 } label: {
                     Image(systemName: "chevron.left.circle.fill")
@@ -219,8 +221,10 @@ struct PowerRankingsView: View {
                 }
 
                 Button {
-                    withAnimation(.spring(duration: 0.3)) {
-                        vm.navigateToWeek(vm.selectedWeek + 1)
+                    Task {
+                        await vm.navigateToWeek(vm.selectedWeek + 1)
+                        guard !Task.isCancelled else { return }
+                        if !hasAnyRoasts { await generateRoasts() }
                     }
                 } label: {
                     Image(systemName: "chevron.right.circle.fill")

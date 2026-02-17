@@ -324,6 +324,8 @@ class PowerRankingsViewModel {
         parts.append("s:\(context.sackoPunishment)")
         parts.append("c:\(context.cultureNotes)")
         
+        parts.append("w:\(selectedWeek)")
+        
         // Use a simple deterministic hash (djb2)
         let combined = parts.joined(separator: "||")
         var hash = 5381
@@ -338,11 +340,16 @@ class PowerRankingsViewModel {
     /// Navigates to the specified week, computing historical standings and loading matchup data.
     /// When all-matchups data is available, reconstructs cumulative records through the target week
     /// so the UI shows standings as they were at that point in the season.
-    func navigateToWeek(_ week: Int) {
+    func navigateToWeek(_ week: Int) async {
         let clampedWeek = max(1, min(week, currentWeek))
         selectedWeek = clampedWeek
+        lastRoastHash = nil
+        isLoading = true
         
-        guard let leagueId = currentLeague?.leagueId else { return }
+        guard let leagueId = currentLeague?.leagueId else {
+            isLoading = false
+            return
+        }
         
         // If navigating to the current week, restore base teams
         if clampedWeek == currentWeek {
@@ -357,6 +364,7 @@ class PowerRankingsViewModel {
                     return t
                 }
             }
+            isLoading = false
             return
         }
         
@@ -410,6 +418,8 @@ class PowerRankingsViewModel {
                 return t
             }
         }
+        
+        isLoading = false
     }
     
     /// Refreshes the list of weeks that have cached roasts for the current league

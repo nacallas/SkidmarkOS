@@ -14,7 +14,7 @@ final class WeekNavigationPropertyTests: XCTestCase {
     /// backward is disabled iff S == 1, and forward is disabled iff S == C.
     /// **Validates: Requirements 2.3, 2.4, 2.5, 2.6**
     @MainActor
-    func testWeekNavigationBounds() {
+    func testWeekNavigationBounds() async {
         let iterations = 100
 
         for iteration in 0..<iterations {
@@ -29,7 +29,7 @@ final class WeekNavigationPropertyTests: XCTestCase {
 
             // --- Backward navigation: should produce max(1, S-1) ---
             let expectedBackward = max(1, selectedWeek - 1)
-            vm.navigateToWeek(selectedWeek - 1)
+            await vm.navigateToWeek(selectedWeek - 1)
             XCTAssertEqual(vm.selectedWeek, expectedBackward,
                           "Iteration \(iteration): backward from S=\(selectedWeek), C=\(currentWeek) " +
                           "expected \(expectedBackward), got \(vm.selectedWeek)")
@@ -39,7 +39,7 @@ final class WeekNavigationPropertyTests: XCTestCase {
 
             // --- Forward navigation: should produce min(C, S+1) ---
             let expectedForward = min(currentWeek, selectedWeek + 1)
-            vm.navigateToWeek(selectedWeek + 1)
+            await vm.navigateToWeek(selectedWeek + 1)
             XCTAssertEqual(vm.selectedWeek, expectedForward,
                           "Iteration \(iteration): forward from S=\(selectedWeek), C=\(currentWeek) " +
                           "expected \(expectedForward), got \(vm.selectedWeek)")
@@ -63,17 +63,17 @@ final class WeekNavigationPropertyTests: XCTestCase {
     /// should always clamp to 1.
     /// **Validates: Requirements 2.5, 2.6**
     @MainActor
-    func testWeekNavigationBoundsAtMinimum() {
+    func testWeekNavigationBoundsAtMinimum() async {
         let vm = makeViewModel()
         vm.currentWeek = 1
         vm.selectedWeek = 1
 
         // Backward from week 1 stays at 1
-        vm.navigateToWeek(0)
+        await vm.navigateToWeek(0)
         XCTAssertEqual(vm.selectedWeek, 1, "Cannot go below week 1")
 
         // Forward from week 1 when currentWeek is 1 stays at 1
-        vm.navigateToWeek(2)
+        await vm.navigateToWeek(2)
         XCTAssertEqual(vm.selectedWeek, 1, "Cannot go above currentWeek")
 
         // Both directions disabled
@@ -84,7 +84,7 @@ final class WeekNavigationPropertyTests: XCTestCase {
     /// Navigating far out of bounds still clamps correctly.
     /// **Validates: Requirements 2.3, 2.4, 2.5, 2.6**
     @MainActor
-    func testWeekNavigationExtremeValues() {
+    func testWeekNavigationExtremeValues() async {
         let iterations = 100
 
         for iteration in 0..<iterations {
@@ -95,13 +95,13 @@ final class WeekNavigationPropertyTests: XCTestCase {
 
             // Navigate far below bounds
             let farBelow = Int.random(in: -100...0)
-            vm.navigateToWeek(farBelow)
+            await vm.navigateToWeek(farBelow)
             XCTAssertEqual(vm.selectedWeek, 1,
                           "Iteration \(iteration): navigating to \(farBelow) should clamp to 1")
 
             // Navigate far above bounds
             let farAbove = Int.random(in: (currentWeek + 1)...(currentWeek + 100))
-            vm.navigateToWeek(farAbove)
+            await vm.navigateToWeek(farAbove)
             XCTAssertEqual(vm.selectedWeek, currentWeek,
                           "Iteration \(iteration): navigating to \(farAbove) should clamp to \(currentWeek)")
         }
@@ -246,7 +246,7 @@ final class WeekNavigationCacheLoadPropertyTests: XCTestCase {
 
             // Navigate to each cached week and verify roasts are surfaced
             for week in cachedWeeks {
-                vm.navigateToWeek(week)
+                await vm.navigateToWeek(week)
 
                 let expectedRoasts = expectedRoastsByWeek[week]!
                 for team in vm.teams {
