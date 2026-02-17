@@ -175,7 +175,7 @@ struct PowerRankingsView: View {
 
     @ViewBuilder
     private func weekSelectorBar(_ vm: PowerRankingsViewModel) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             // Season phase badge
             if vm.seasonPhase == .offseason {
                 Text("🏈 Offseason — Final Standings")
@@ -183,59 +183,55 @@ struct PowerRankingsView: View {
                     .foregroundStyle(.orange)
             }
             
-            HStack {
-                Button {
-                    Task {
-                        await vm.navigateToWeek(vm.selectedWeek - 1)
-                        guard !Task.isCancelled else { return }
-                        await generateRoasts()
-                    }
-                } label: {
-                    Image(systemName: "chevron.left.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(vm.selectedWeek <= 1 ? .gray.opacity(0.3) : .orange)
-                }
-                .disabled(vm.selectedWeek <= 1)
-
-                Spacer()
-
-                VStack(spacing: 4) {
-                    Text(weekLabel(vm))
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .contentTransition(.numericText())
-                    
-                    if vm.seasonPhase != .offseason {
-                        if vm.selectedWeek == vm.currentWeek {
-                            Text("Current Week")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.green)
-                        } else {
-                            Text("Past Week")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
+            // Week title with arrows pinned to sides via overlay
+            Text(weekLabel(vm))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .contentTransition(.numericText())
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .leading) {
+                    Button {
+                        Task {
+                            await vm.navigateToWeek(vm.selectedWeek - 1)
+                            guard !Task.isCancelled else { return }
+                            await generateRoasts()
                         }
+                    } label: {
+                        Image(systemName: "chevron.left.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(vm.selectedWeek <= 1 ? .gray.opacity(0.3) : .orange)
                     }
-                    
-                    // Dot indicators for cached weeks
-                    if vm.currentWeek > 1 {
-                        weekDots(vm)
-                    }
+                    .disabled(vm.selectedWeek <= 1)
                 }
-
-                Spacer()
-
-                Button {
-                    Task {
-                        await vm.navigateToWeek(vm.selectedWeek + 1)
-                        guard !Task.isCancelled else { return }
-                        await generateRoasts()
+                .overlay(alignment: .trailing) {
+                    Button {
+                        Task {
+                            await vm.navigateToWeek(vm.selectedWeek + 1)
+                            guard !Task.isCancelled else { return }
+                            await generateRoasts()
+                        }
+                    } label: {
+                        Image(systemName: "chevron.right.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(vm.selectedWeek >= vm.currentWeek ? .gray.opacity(0.3) : .orange)
                     }
-                } label: {
-                    Image(systemName: "chevron.right.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(vm.selectedWeek >= vm.currentWeek ? .gray.opacity(0.3) : .orange)
+                    .disabled(vm.selectedWeek >= vm.currentWeek)
                 }
-                .disabled(vm.selectedWeek >= vm.currentWeek)
+            
+            // Subtitle and dots below, independent of arrow positioning
+            if vm.seasonPhase != .offseason {
+                if vm.selectedWeek == vm.currentWeek {
+                    Text("Current Week")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.green)
+                } else {
+                    Text("Past Week")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            if vm.currentWeek > 1 {
+                weekDots(vm)
             }
 
             if !hasAnyRoasts && !vm.isLoading {
