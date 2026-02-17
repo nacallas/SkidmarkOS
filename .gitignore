@@ -1,0 +1,25 @@
+node_modules/
+
+# Python
+__pycache__/
+.hypothesis/
+*.pyc
+
+# CDK
+cdk.out/
+
+# Session artifacts
+*-fact-log.md
+fact-log-*.md
+fact-log.md
+review-findings.md
+espn-auth-final-review.md
+IOS_MIGRATION_SPEC.md
+session-fact-log.md
+
+# Test logs
+test_output.log
+test_checkpoint_log.md
+
+# Kiro internal
+.kiro/fact-log*.md

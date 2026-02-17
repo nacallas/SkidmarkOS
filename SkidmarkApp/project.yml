@@ -1,0 +1,48 @@
+name: SkidmarkApp
+options:
+  bundleIdPrefix: com.skidmark
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "16.2"
+  generateEmptyDirectories: false
+
+packages:
+  SwiftCheck:
+    url: https://github.com/typelift/SwiftCheck.git
+    from: "0.12.0"
+
+targets:
+  SkidmarkApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: SkidmarkApp.swift
+      - path: Models
+      - path: ViewModels
+      - path: Views
+      - path: Services
+      - path: Utilities
+      - path: SupportingFiles/Assets.xcassets
+    settings:
+      base:
+        INFOPLIST_FILE: SupportingFiles/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.skidmark.SkidmarkApp
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: false
+
+  SkidmarkAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: SkidmarkApp
+      - package: SwiftCheck
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: true
