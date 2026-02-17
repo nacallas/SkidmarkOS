@@ -270,7 +270,8 @@ class PowerRankingsViewModel {
                     leagueId: leagueId,
                     weekNumber: selectedWeek,
                     generatedAt: Date(),
-                    roasts: roasts
+                    roasts: roasts,
+                    teamSnapshot: teams
                 )
                 try? storageService.saveWeeklyRoasts(weeklyCache)
                 refreshAvailableWeeks()
@@ -325,11 +326,20 @@ class PowerRankingsViewModel {
         
         do {
             if let cached = try storageService.loadWeeklyRoasts(forLeagueId: leagueId, week: clampedWeek) {
-                // Apply cached roasts to current teams
-                teams = teams.map { team in
-                    var t = team
-                    t.roast = cached.roasts[team.id]
-                    return t
+                if let snapshot = cached.teamSnapshot {
+                    // Restore full team snapshot with roasts applied
+                    teams = snapshot.map { team in
+                        var t = team
+                        t.roast = cached.roasts[team.id]
+                        return t
+                    }
+                } else {
+                    // Legacy cache without snapshot -- apply roasts to current teams
+                    teams = teams.map { team in
+                        var t = team
+                        t.roast = cached.roasts[team.id]
+                        return t
+                    }
                 }
             } else {
                 // No cached roasts for this week -- clear roasts so UI shows "Generate Roasts"

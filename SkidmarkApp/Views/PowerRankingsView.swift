@@ -175,41 +175,59 @@ struct PowerRankingsView: View {
 
     @ViewBuilder
     private func weekSelectorBar(_ vm: PowerRankingsViewModel) -> some View {
-        VStack(spacing: 8) {
-            HStack {
+        VStack(spacing: 10) {
+            // Season phase badge
+            if vm.seasonPhase == .offseason {
+                Text("🏈 Offseason — Final Standings")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.orange)
+            }
+            
+            HStack(spacing: 16) {
                 Button {
-                    vm.navigateToWeek(vm.selectedWeek - 1)
+                    withAnimation(.spring(duration: 0.3)) {
+                        vm.navigateToWeek(vm.selectedWeek - 1)
+                    }
                 } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(vm.selectedWeek <= 1 ? .gray.opacity(0.3) : .orange)
                 }
                 .disabled(vm.selectedWeek <= 1)
 
-                Spacer()
-
-                Text(weekLabel(vm))
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-
-                Spacer()
+                VStack(spacing: 4) {
+                    Text(weekLabel(vm))
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
+                    
+                    if vm.seasonPhase != .offseason {
+                        if vm.selectedWeek == vm.currentWeek {
+                            Text("Current Week")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("Past Week")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    // Dot indicators for cached weeks
+                    if vm.currentWeek > 1 {
+                        weekDots(vm)
+                    }
+                }
 
                 Button {
-                    vm.navigateToWeek(vm.selectedWeek + 1)
+                    withAnimation(.spring(duration: 0.3)) {
+                        vm.navigateToWeek(vm.selectedWeek + 1)
+                    }
                 } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .semibold))
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(vm.selectedWeek >= vm.currentWeek ? .gray.opacity(0.3) : .orange)
                 }
                 .disabled(vm.selectedWeek >= vm.currentWeek)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-
-            if vm.selectedWeek < vm.currentWeek {
-                Text("Past Week")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(.ultraThinMaterial, in: Capsule())
             }
 
             if !hasAnyRoasts && !vm.isLoading {
@@ -225,13 +243,49 @@ struct PowerRankingsView: View {
                 }
             }
         }
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func weekDots(_ vm: PowerRankingsViewModel) -> some View {
+        let maxDotsVisible = 10
+        let totalWeeks = vm.currentWeek
+        let showDots = totalWeeks <= maxDotsVisible
+        
+        if showDots {
+            HStack(spacing: 4) {
+                ForEach(1...totalWeeks, id: \.self) { week in
+                    Circle()
+                        .fill(dotColor(week: week, selected: vm.selectedWeek, available: vm.availableWeeks))
+                        .frame(width: 6, height: 6)
+                }
+            }
+            .padding(.top, 2)
+        } else {
+            Text("\(vm.selectedWeek) of \(totalWeeks)")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func dotColor(week: Int, selected: Int, available: [Int]) -> Color {
+        if week == selected {
+            return .orange
+        } else if available.contains(week) {
+            return .orange.opacity(0.4)
+        } else {
+            return .gray.opacity(0.3)
+        }
     }
 
     private func weekLabel(_ vm: PowerRankingsViewModel) -> String {
+        if vm.seasonPhase == .offseason {
+            return "Offseason"
+        }
         let base = "Week \(vm.selectedWeek)"
-        return vm.seasonPhase == .playoffs ? "\(base) - Playoffs" : base
+        return vm.seasonPhase == .playoffs ? "\(base) — Playoffs" : base
     }
 
     // MARK: - Rankings Scroll View

@@ -221,7 +221,13 @@ private struct EnhancedRoastRequest: Codable {
         self.context = ContextData(context: context)
         self.matchups = matchups.map { MatchupData(matchup: $0) }
         self.weekNumber = weekNumber
-        self.seasonPhase = seasonPhase == .playoffs ? "playoffs" : "regular_season"
+        self.seasonPhase = {
+            switch seasonPhase {
+            case .playoffs: return "playoffs"
+            case .offseason: return "offseason"
+            case .regularSeason: return "regular_season"
+            }
+        }()
         self.playoffBracket = playoffBracket?.map { BracketEntryData(entry: $0) }
     }
 }

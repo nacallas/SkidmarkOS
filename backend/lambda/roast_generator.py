@@ -341,6 +341,7 @@ def _build_prompt(
     # Determine whether to use playoff mode: requires playoffs phase AND bracket data.
     # Per Requirement 7.5, fall back to regular-season format when bracket is nil/empty.
     is_playoff_mode = season_phase == "playoffs" and bool(playoff_bracket)
+    is_offseason = season_phase == "offseason"
 
     if is_playoff_mode:
         roasting_approach = _build_playoff_roasting_approach(playoff_bracket, resolve_teams)
@@ -352,6 +353,18 @@ def _build_prompt(
             "- For head-to-head playoff matchups, reference what is at stake.\n"
             "- Give championship matchup teams an elevated, legacy-defining roast treatment."
         )
+    elif is_offseason:
+        roasting_approach = f"""=== ROASTING APPROACH (OFFSEASON MODE) ===
+
+The season is OVER. These are the final standings. Every win, every loss, every embarrassing stat line is now permanently etched in league history. There are no more chances to redeem a garbage season or prove the doubters wrong.
+
+TOP TIER (ranks 1-{top_cutoff}): They won when it mattered. But did they REALLY earn it, or did they get carried by one lucky draft pick? Question their legacy. Were they actually good, or was everyone else just worse?
+
+MIDDLE TIER (ranks {top_cutoff + 1}-{mid_cutoff}): The most forgettable teams in league history. Not good enough to celebrate, not bad enough to be memorable. They existed. That's about it.
+
+BOTTOM TIER (ranks {mid_cutoff + 1}+): Their season was a disaster from start to finish. {f'The sacko punishment ({sacko}) awaits -- describe their impending humiliation in vivid detail.' if sacko != 'not specified' else 'They have nothing to show for an entire season of effort.'}"""
+        bracket_section = ""
+        playoff_requirements = ""
     else:
         roasting_approach = f"""=== ROASTING APPROACH ===
 
