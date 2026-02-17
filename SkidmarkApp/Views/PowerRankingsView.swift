@@ -183,7 +183,7 @@ struct PowerRankingsView: View {
                     .foregroundStyle(.orange)
             }
             
-            HStack(spacing: 16) {
+            HStack {
                 Button {
                     Task {
                         await vm.navigateToWeek(vm.selectedWeek - 1)
@@ -196,6 +196,8 @@ struct PowerRankingsView: View {
                         .foregroundStyle(vm.selectedWeek <= 1 ? .gray.opacity(0.3) : .orange)
                 }
                 .disabled(vm.selectedWeek <= 1)
+
+                Spacer()
 
                 VStack(spacing: 4) {
                     Text(weekLabel(vm))
@@ -219,6 +221,8 @@ struct PowerRankingsView: View {
                         weekDots(vm)
                     }
                 }
+
+                Spacer()
 
                 Button {
                     Task {
@@ -249,7 +253,6 @@ struct PowerRankingsView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     @ViewBuilder
